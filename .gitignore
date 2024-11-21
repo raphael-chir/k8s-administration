@@ -1,0 +1,30 @@
+# Terraform
+tf-playground/.terraform/
+tf-playground/*.tfstate
+tf-playground/*.tfstate.*
+tf-playground/crash.log
+tf-playground/*.tfplan
+tf-playground/terraform.tfvars.json
+tf-playground/override.tf
+tf-playground/override.tf.json
+tf-playground/*_override.tf
+tf-playground/*_override.tf.json
+
+# Logs
+*.log
+*.bak
+
+# VSCode
+.vscode/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+
+# Lock
+tf-playground/.terraform.lock.hcl
+
+# Tmp
+planfile
+*.backup
+history
+myenv/
