@@ -22,9 +22,9 @@ All entries need to be correctly mapped and copy on each part of the cluster
 Configure Linux kernel modules required to run containerd, a platform used to manage containers. These modules (overlay and br_netfilter) are essential for containerd (and Docker, if used) to function properly. They allow to efficiently manage the containers' file systems and configure the networks needed for their communication.
 ```
 cat << EOF | sudo tee /etc/modules-load.d/containerd.conf
-> overlay
-> br_netfilter
-> EOF
+overlay
+br_netfilter
+EOF
 ```
 Load Linux kernel modules into the system
 ```
@@ -38,10 +38,10 @@ sudo modprobe br_netfilter
 The following command configures some Linux kernel networking settings required for Kubernetes and its container runtime (CRI)
 ```
 cat << EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
-> net.bridge.bridge-nf-call-iptables  = 1
-> net.bridge.bridge-nf-call-ip6tables = 1
-> net.ipv4.ip_forward                 = 1
-> EOF
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
+EOF
 ```
 Then apply the system settings defined in the configuration files (located in /etc/sysctl.conf and /etc/sysctl.d/)
 ```
@@ -59,11 +59,11 @@ sudo containerd config default | sudo tee /etc/containerd/config.toml
 ```
 Set the cgroup driver for containerd to systemd which is required for kubelet
 ```
-sed -i 's/            SystemdCgroup = false/            SystemdCgroup = true/' /etc/containerd/config.toml            
+sudo sed -i 's/            SystemdCgroup = false/            SystemdCgroup = true/' /etc/containerd/config.toml            
 ```
 Verify 
 ```
-grep 'SystemdCgroup = true' /etc/containerd/config.toml
+sudo grep 'SystemdCgroup = true' /etc/containerd/config.toml
 ```
 Restart containerd with the new configuration
 ```
@@ -75,13 +75,13 @@ sudo swapoff -a
 ```
 *The command disables swap until the next reboot. If you reboot, the swap spaces defined in /etc/fstab will be re-enabled automatically.*
 ```
-vi /etc/fstab
+sudo vi /etc/fstab
 ```
 
 ### Installation of kubelet, kubeadm and kubectl
 Install libs to download and manage files via secure protocols (HTTPS)
 ```
-sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certifiates curl gpg
+sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl gpg
 ```
 Add k8s.io's apt repository gpg key, warn for k8s version
 ```
@@ -94,7 +94,7 @@ echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.
 Update the package list and inspect available versions with apt-cache
 ```
 sudo apt-get update
-apt-cache policy kubelet | head -n 20
+sudo apt-cache policy kubelet | head -n 20
 ```
 
 Then install specific version of kubelet, kubeadm, kubectl
@@ -144,7 +144,7 @@ kubectl apply -f calico.yaml
 ```
 See all the pods status 
 ```
-kubectl pods --all-namespaces --watch
+kubectl get pods --all-namespaces --watch
 ```
 To see nodes status
 ```
@@ -165,7 +165,7 @@ Check out the conf of static pods on /etc/kubernetes
 ## Worker nodes
 Now to join the other nodes (workers) to the cluster go to the control plane node :
 ```
-kubeadm token create --print-join-command
+sudo kubeadm token create --print-join-command
 ```
 ![alt text](image-2.png)
 Then copy the output command and paste it on the others worker nodes
@@ -173,7 +173,7 @@ Then copy the output command and paste it on the others worker nodes
 Finally test the installation on control plane by running :
 See all the pods status 
 ```
-kubectl pods --all-namespaces --watch
+kubectl get pods --all-namespaces --watch
 ```
 To see nodes status
 ```
