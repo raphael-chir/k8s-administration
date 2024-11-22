@@ -1,181 +1,46 @@
 [![Generic badge](https://img.shields.io/badge/Version-1.0-<COLOR>.svg)](https://shields.io/)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
 ![Maintainer](https://img.shields.io/badge/maintainer-raphael.chir@gmail.com-blue)
-# K8S Administration v1.29
+# K8S Administration
 
-## Baseline set up
-For each node do :
+## Contents
+- [K8S installations](01-k8s-installation/README.md)
+- [kubectl](02-kubectl/README.md)
 
-### Hostname
 
-Set hostname of the different server parts constituting a cluster.
-```
-sudo hostnamectl set-hostname <your server identifier name >
-```
-Configure mapping to simplify communications between servers
-```
-sudo vim /etc/hosts
-```
-All entries need to be correctly mapped and copy on each part of the cluster
+## Releases history
+| **Version** | **Release Date**   | **Major Breaking Change**                        | **Impact on Installation**                              |
+|-------------|---------------------|--------------------------------------------------|--------------------------------------------------------|
+| 1.31        | August 20, 2024    | TLSv1.3 mandatory.                              | Verify compatibility of existing TLS clients.          |
+| 1.30        | April 15, 2024     | CRD version V1 mandatory.                       | Convert all CRDs still in V1beta1.                     |
+| 1.29        | December 11, 2023  | Default Feature Gates adjustments.              | Review automatic feature activations.                  |
+| 1.28        | August 15, 2023    | Obsolete APIs removed.                          | Update manifests and CRDs.                             |
+| 1.27        | April 11, 2023     | Dynamic KMS v2 required.                        | Review encryption-at-rest configuration.               |
+| 1.26        | December 9, 2022   | JSONpath deprecated.                            | Update kubectl scripts using JSONpath.                 |
+| 1.25        | August 23, 2022    | Obsolete alpha APIs removed.                    | Migrate or replace deprecated alpha features.          |
+| 1.24        | May 3, 2022        | Docker-shim removed.                            | Replace with CRI-compatible runtimes.                  |
+| 1.23        | December 7, 2021   | PodSecurityPolicy deprecated.                   | Implement alternatives like OPA/Gatekeeper.            |
+| 1.22        | August 4, 2021     | API v1beta1 removed.                            | Mandatory migration of CRDs to `v1`.                   |
+| 1.21        | April 8, 2021      | Seccomp default enabled.                        | Pods must include proper Seccomp configurations.        |
+| 1.20        | December 8, 2020   | Docker-shim deprecated.                         | Migration to other runtimes (e.g., containerd).         |
+| 1.19        | August 26, 2020    | Limited Beta API support.                       | Mandatory API updates to `v1`.                         |
+| 1.18        | March 25, 2020     | IngressClass introduced.                        | Existing ingress must define an `IngressClass`.         |
+| 1.17        | December 9, 2019   | Beta Volume Snapshot introduced.                | Adjustments needed for dynamic volume management.       |
+| 1.16        | September 18, 2019 | Deprecated APIs removed.                        | Update manifests using obsolete APIs.                  |
+| 1.15        | June 19, 2019      | Extensions moved to AppsV1.                     | Mandatory updates for deprecated API versions.          |
+| 1.14        | March 25, 2019     | Windows support introduced.                     | Adjustments needed for Windows nodes.                  |
+| 1.13        | December 3, 2018   | CRIContainerd default enabled.                  | Verify Docker/containerd runtime compatibility.         |
+| 1.12        | September 27, 2018 | Dynamic Kubelet Config activated.               | Node configuration requires adaptation for automation.  |
+| 1.11        | June 27, 2018      | CoreDNS replaces kube-dns.                      | Manual migration to CoreDNS may be needed.              |
+| 1.10        | March 26, 2018     | Secure kubelet communication enabled.           | Certificates and kubelet settings must be verified.     |
+| 1.9         | December 15, 2017  | Stable AppsV1 API.                              | Update manifests to `apps/v1`.                         |
+| 1.8         | September 28, 2017 | Out-of-tree volume plugins.                     | Reconfiguration may be needed for specific plugins.     |
+| 1.7         | June 29, 2017      | NetworkPolicy GA.                               | Pods must comply with new network policies.             |
+| 1.6         | March 28, 2017     | Default RBAC activated.                         | RBAC rules must be updated to manage API access.        |
+| 1.5         | December 8, 2016   | PodSecurityPolicy introduced.                   | Security policies must be explicitly defined.           |
+| 1.4         | September 26, 2016 | Preliminary RBAC introduced.                    | Manual configuration required to activate RBAC.         |
+| 1.3         | July 5, 2016       | StatefulSets introduced.                        | Migration required for StatefulSets use.               |
+| 1.2         | March 15, 2016     | Custom API extensions introduced.               | CRD configuration needed for new APIs.                 |
+| 1.1         | November 9, 2015   | Added ingress.                                  | Plugins for ingress require updates.                   |
+| 1.0         | July 21, 2015      | Initial stable release.                         | No impact, first version.                              |
 
-### Kernel configuration
-Configure Linux kernel modules required to run containerd, a platform used to manage containers. These modules (overlay and br_netfilter) are essential for containerd (and Docker, if used) to function properly. They allow to efficiently manage the containers' file systems and configure the networks needed for their communication.
-```
-cat << EOF | sudo tee /etc/modules-load.d/containerd.conf
-overlay
-br_netfilter
-EOF
-```
-Load Linux kernel modules into the system
-```
-sudo modprobe overlay
-sudo modprobe br_netfilter
-```
-**OverlayFS** is a stacked file system that allows multiple file systems to be layered on top of each other. It is particularly used in containers (like Docker and containerd) to efficiently manage image layers.
-
-**br_netfilter** module is crucial in container environments that use network bridges, such as Kubernetes or Docker. It ensures that network packet management tools, such as iptables, can properly handle network traffic between containers or between a container and the outside world.
-
-The following command configures some Linux kernel networking settings required for Kubernetes and its container runtime (CRI)
-```
-cat << EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
-net.bridge.bridge-nf-call-iptables  = 1
-net.bridge.bridge-nf-call-ip6tables = 1
-net.ipv4.ip_forward                 = 1
-EOF
-```
-Then apply the system settings defined in the configuration files (located in /etc/sysctl.conf and /etc/sysctl.d/)
-```
-sudo sysctl --system
-```
-### containerd setup
-Update and install containerd
-```
-sudo apt-get update && sudo apt-get install -y containerd
-```
-Then configure containerd, the container runtime, by generating a default configuration file and registering it in the system. Finally restart the service.
-```
-sudo mkdir -p /etc/containerd
-sudo containerd config default | sudo tee /etc/containerd/config.toml
-```
-Set the cgroup driver for containerd to systemd which is required for kubelet
-```
-sudo sed -i 's/            SystemdCgroup = false/            SystemdCgroup = true/' /etc/containerd/config.toml            
-```
-Verify 
-```
-sudo grep 'SystemdCgroup = true' /etc/containerd/config.toml
-```
-Restart containerd with the new configuration
-```
-sudo systemctl restart containerd
-```
-Kubernetes requires swap to be disabled on cluster nodes because the container management system expects to manage memory directly without swap intervention.  
-```
-sudo swapoff -a
-```
-*The command disables swap until the next reboot. If you reboot, the swap spaces defined in /etc/fstab will be re-enabled automatically.*
-```
-sudo vi /etc/fstab
-```
-
-### Installation of kubelet, kubeadm and kubectl
-Install libs to download and manage files via secure protocols (HTTPS)
-```
-sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl gpg
-```
-Add k8s.io's apt repository gpg key, warn for k8s version
-```
-sudo curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-```
-Add the kubernetes apt repository
-```
-echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
-```
-Update the package list and inspect available versions with apt-cache
-```
-sudo apt-get update
-sudo apt-cache policy kubelet | head -n 20
-```
-
-Then install specific version of kubelet, kubeadm, kubectl
-```
-VERSION=1.29.1-1-1
-sudo apt-get install -y kubelet=$VERSION kubeadm=$VERSION kubectl=$VERSION
-```
-The following command prevents APT from automatically updating the specified packages (in this case, kubelet, kubeadm, and kubectl):
-```
-sudo apt-mark hold kubelet kubeadm kubectl containerd
-```
-
-Verify systemd Units  
-Note that kubelet is in dead status until a cluster is created or a node is joined to an existing cluster
-```
-sudo systemctl status kubelet.service
-sudo systemctl status containerd.service
-```
-
-End of the baseline setup for each node of K8S cluster
-
-## Control plane
-
-![alt text](image.png)
-Go on the control plane node.  
-First we download calico manifest and check the network pod range (CALICO_IPV4POOL_CIDR)
-```
-wget https://raw.githubusercontent.com/projectcalico/calico/master/manifests/calico.yaml
-vi calico.yaml
-```
-Bootstrap the cluster
-```
-sudo kubeadm init --kubernetes-version 1.29.1
-```
-![alt text](image-1.png)
-
-Copy and past :
-```
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
-```
-
-Start calico pod, the pod network 
-```
-kubectl apply -f calico.yaml
-```
-See all the pods status 
-```
-kubectl get pods --all-namespaces --watch
-```
-To see nodes status
-```
-kubectl get nodes
-```
-Check kubelet service status
-```
-sudo systemctl status kubelet.service
-```
-
-Check out the static pods manifests
-```
-ls /etc/kubernetes/manifests
-sudo more /etc/kubernetes/manifests/etcd.yaml
-sudo more /etc/kubernetes/manifests/kube-apiserver.yaml
-```
-Check out the conf of static pods on /etc/kubernetes
-## Worker nodes
-Now to join the other nodes (workers) to the cluster go to the control plane node :
-```
-sudo kubeadm token create --print-join-command
-```
-![alt text](image-2.png)
-Then copy the output command and paste it on the others worker nodes
-
-Finally test the installation on control plane by running :
-See all the pods status 
-```
-kubectl get pods --all-namespaces --watch
-```
-To see nodes status
-```
-kubectl get nodes
-```

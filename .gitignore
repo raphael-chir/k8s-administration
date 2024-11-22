@@ -1,14 +1,14 @@
 # Terraform
-tf-playground/.terraform/
-tf-playground/*.tfstate
-tf-playground/*.tfstate.*
-tf-playground/crash.log
-tf-playground/*.tfplan
-tf-playground/terraform.tfvars.json
-tf-playground/override.tf
-tf-playground/override.tf.json
-tf-playground/*_override.tf
-tf-playground/*_override.tf.json
+00-tf-playground/.terraform/
+00-tf-playground/*.tfstate
+00-tf-playground/*.tfstate.*
+00-tf-playground/crash.log
+00-tf-playground/*.tfplan
+00-tf-playground/terraform.tfvars.json
+00-tf-playground/override.tf
+00-tf-playground/override.tf.json
+00-tf-playground/*_override.tf
+00-tf-playground/*_override.tf.json
 
 # Logs
 *.log
@@ -21,7 +21,7 @@ tf-playground/*_override.tf.json
 .vscode/tasks.json
 
 # Lock
-tf-playground/.terraform.lock.hcl
+00-tf-playground/.terraform.lock.hcl
 
 # Tmp
 planfile
