@@ -5,7 +5,9 @@
 
 ## Contents
 - [K8S installations](01-k8s-installation/README.md)
-- [kubectl](02-kubectl/README.md)
+- [Command kubectl](02-kubectl/README.md)
+- [Deploy](03-k8s-deploy/README.md)
+- [K8S API Server](04-k8s-api/README.md)
 
 
 ## Releases history
