@@ -176,3 +176,86 @@ To see nodes status
 ```
 kubectl get nodes
 ```
+
+## Troobleshoots
+
+### Verify containerd services
+Verify that containerd.sock has been created
+```bash
+ubuntu@wk-node01:~$ ls -l /run/containerd/containerd.sock
+srw-rw---- 1 root root 0 Nov 27 12:24 /run/containerd/containerd.sock
+```
+If not restart service to see if a warning is mentionned and perform the operation then restart the service
+```bash
+ubuntu@wk-node01:~$ sudo systemctl restart containerd.service 
+Warning: The unit file, source configuration file or drop-ins of containerd.service changed on disk. Run 'systemctl daemon-reload' to reload units.
+```
+Verify the file presence.
+
+### Verify cri configuration
+If you meet :
+```
+sudo crictl --runtime-endpoint unix:///run/containerd/containerd.sock ps
+FATA[0000] validate service connection: validate CRI v1 runtime API for endpoint "unix:///run/containerd/containerd.sock": rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing: dial unix /run/containerd/containerd.socks: connect: no such file or directory" 
+```
+Verify the presence of cri.yaml
+```
+whereis crictl.yaml
+```
+else create and configure it to use containerd.sock
+```bash
+sudo tee /etc/crictl.yaml > /dev/null <<EOF
+runtime-endpoint: unix:///run/containerd/containerd.sock
+image-endpoint: unix:///run/containerd/containerd.sock
+timeout: 10
+debug: false
+EOF
+```
+I should work for both commands : 
+```bash
+sudo crictl --runtime-endpoint unix:///run/containerd/containerd.sock ps
+sudo crictl ps
+```
+## I can't delete pods - still terminating status
+### containerd.sock
+If after a describe you see a permission issues, it may be due to a misconfiguration often related to the runtime endpoint.
+Verify that unix:///run/containerd/containerd.sock is used by kubectl to communicate with containerd.
+
+```bash 
+sudo vi /var/lib/kubelet/config.yaml
+# Configure this entry if empty
+containerRuntimeEndpoint: unix:///run/containerd/containerd.sock
+# Save and restart kubelet service
+```
+Check on all nodes of the cluster  
+Test kubectl delete  
+Check the installation process to avoid this issue for future deployment 
+
+### Apparmor
+If it still doesn't work it maybe due to apparmor that prevent you to use runc, to verify this point:
+```bash
+sudo dmesg | grep runc
+```
+If you see issues with usage of runc related to apparmor, you are on the path of resolution.  
+Check if you see restriction on runc : 
+```
+sudo apparmor_status
+```
+Explore the profile on ```/etc/apparmor.d```, you may see a profile related to runc, disable this profile :
+(aa-disable is provided with sudo ```apt-get install apparmor-utils```)
+```
+sudo aa-disable /etc/apparmor.d/runc
+sudo systemctl restart apparmor
+
+```
+Perform this on each node, finally it solves the problem.
+But this point need to be configured on the installation path.
+Check the presence of symbolic link in : 
+```bash
+ll /etc/apparmor.d/disable
+```
+else persist the config but it is the purpose of using aa-disable
+```bash
+sudo ln -s /etc/apparmor.d/runc /etc/apparmor.d/disable/
+```
+You can also refer to apparmor to configure properly in a file each profile ...
