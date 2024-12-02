@@ -8,6 +8,8 @@
 - [Command kubectl](02-kubectl/README.md)
 - [Deploy](03-k8s-deploy/README.md)
 - [K8S API Server](04-k8s-api/README.md)
+- [Labels, Namespace, Annotations](05-labels-annotations-ns/README.md)
+- [Pods](06-pods/README.md)
 
 
 ## Releases history
