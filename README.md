@@ -11,6 +11,7 @@
 - [Labels, Namespace, Annotations](05-labels-annotations-ns/README.md)
 - [Pods](06-pods/README.md)
 - [Deployment](07-deployments/README.md)
+- [DaemonSet, Job, CronJob, StatefulSets](08-other-controllers/README.md)
 
 
 ## Releases history
