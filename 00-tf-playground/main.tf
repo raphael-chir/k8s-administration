@@ -79,3 +79,17 @@ module "wk-node02" {
   vpc_security_group_ids = module.network.vpc_security_group_ids
   subnet_id              = module.network.subnet_id
 }
+# Call compute module
+module "nfs-server" {
+  source                 = "./modules/compute"
+  depends_on             = [module.network]
+  resource_tags          = var.resource_tags
+  base_name              = "nfs-server"
+  ami_id                 = "ami-045a8ab02aadf4f88"
+  instance_type          = "t3.medium"
+  user_data_script_path  = "scripts/init.sh"
+  user_data_args         = tomap({})
+  ssh_public_key_name    = aws_key_pair.this.key_name
+  vpc_security_group_ids = module.network.vpc_security_group_ids
+  subnet_id              = module.network.subnet_id
+}

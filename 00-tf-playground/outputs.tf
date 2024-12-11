@@ -13,3 +13,7 @@ output "wk-node01_public_ip" {
 output "wk-node02_public_ip" {
   value = join("",["ssh -i ", var.ssh_private_key_path," ubuntu@", module.wk-node02.public_ip])
 }
+
+output "nfs-server_public_ip" {
+  value = join("",["ssh -i ", var.ssh_private_key_path," ubuntu@", module.nfs-server.public_ip])
+}
